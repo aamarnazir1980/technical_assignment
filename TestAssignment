@@ -1,0 +1,336 @@
+# technical_assignment
+<!DOCTYPE html>
+<html>
+<body>
+
+<h2>Trip Sorter</h2>
+
+
+<table border="1">
+<tr>
+<td>
+<select name="fromCity" id="fromCity">
+</select>
+</td>
+</tr>
+<tr>
+<td>
+<select name="toCity" id="toCity">
+</select>
+</td>
+</tr>
+<tr>
+<td>
+<input type="button" id="cheeapest" value="cheapest" onClick="setSort('1');"/>
+<input type="button" id="fastest" value="fastest" onClick="setSort('2');"/>
+</td>
+</tr>
+<tr>
+<td>
+<input type="button" id="search" value="search" onClick="tripPath();"/>
+</td>
+</tr>
+</table>
+
+<br/>
+<br/>
+<h2>Trip Path</h2>
+<br/>
+<div id="tripPathResult"></div>
+<script>
+
+var obj = JSON.parse('{"currency":"EUR","deals":[{"transport":"train","departure":"London","arrival":"Amsterdam","duration":{"h":"05","m":"00"},"cost":160,"discount":0,"reference":"TLA0500"},{"transport":"bus","departure":"London","arrival":"Amsterdam","duration":{"h":"07","m":"45"},"cost":40,"discount":25,"reference":"BLA0745"},{"transport":"car","departure":"London","arrival":"Amsterdam","duration":{"h":"04","m":"45"},"cost":120,"discount":0,"reference":"CLA0445"},{"transport":"train","departure":"London","arrival":"Paris","duration":{"h":"04","m":"30"},"cost":160,"discount":0,"reference":"TLP0430"},{"transport":"bus","departure":"Paris","arrival":"Berlin","duration":{"h":"05","m":"30"},"cost":40,"discount":50,"reference":"BLP0530"},{"transport":"car","departure":"London","arrival":"Paris","duration":{"h":"04","m":"15"},"cost":120,"discount":0,"reference":"CLP0415"},{"transport":"bus","departure":"Berlin","arrival":"Moscow","duration":{"h":"05","m":"15"},"cost":40,"discount":50,"reference":"BIA0515"}]}');
+
+var deals = obj.deals;
+//alert(deals);
+var inderectPathIndex = "";
+var routeIndex = "";
+var fromDistinctCity,toDistinctCity;
+fromDistinctCity = [];
+toDistinctCity = [];
+var sort = 1;
+function setSort(selectValue) {
+	sort = selectValue;
+}
+function tripPath() {
+	var fromCity = document.getElementById("fromCity");
+	var fromSelectedCity = fromCity.options[fromCity.selectedIndex].value;
+	
+	var toCity = document.getElementById("toCity");
+	var toSelectedCity = toCity.options[toCity.selectedIndex].value;
+	//alert(fromSelectedCity);
+	//alert(toSelectedCity);
+	//alert(sort);
+	pathlists = findTripPaths(fromSelectedCity,toSelectedCity);
+	
+	if (fromSelectedCity == -1) {
+		alert("Please select one from city");
+	}
+	
+	if (toSelectedCity == -1) {
+		alert("Please select one to city");
+	}
+	
+	/*
+	alert(pathlists.length);
+	for (dis =0; dis < pathlists.length;dis++) {
+		alert(pathlists[dis]);
+	}
+	*/
+	if ( sort == 1) {
+		pathlists.sort(function(a, b){
+			 if (a == null || b == null) {
+			 	return 0;
+			 }else {
+				var aPathIndexes = a.split(",");
+				var bPathIndexes = b.split(",");
+				var aCostTotal = 0;
+				var bCostTotal = 0;
+				var index = -1;
+				for (sort=0; sort < aPathIndexes.length;sort++) {
+					index = aPathIndexes[sort];
+					aCostTotal = aCostTotal + deals[index].cost; 
+				}
+				
+				for (sort=0; sort < bPathIndexes.length;sort++) {
+					index = bPathIndexes[sort];
+					bCostTotal = bCostTotal + deals[index].cost; 
+				}
+				return aCostTotal - bCostTotal;
+			}
+			}
+			);
+		
+	}else {
+		pathlists.sort(function(a, b){
+			if (a == null || b == null) {
+				 	return 0;
+			}else {
+				var aPathIndexes = a.split(",");
+				var bPathIndexes = b.split(",");
+				var aTotalDuration = 0;
+				var bTotalDuration = 0;
+				var index = -1;
+				for (sort=0; sort < aPathIndexes.length;sort++) {
+					index = aPathIndexes[sort];
+					aTotalDuration = aTotalDuration + parseInt(deals[index].duration.h) + parseInt(deals[index].duration.m); 
+				}
+				
+				for (sort=0; sort < bPathIndexes.length;sort++) {
+					index = bPathIndexes[sort];
+					bTotalDuration = bTotalDuration + parseInt(deals[index].duration.h) + parseInt(deals[index].duration.m);
+				}
+			
+				return eval(aTotalDuration) - eval(bTotalDuration)
+			}
+			
+		}
+		);
+	}
+	/*
+	alert(pathlists.length);
+	for (dis =0; dis < pathlists.length;dis++) {
+		alert(pathlists[dis]);
+	}
+	*/
+	displayTemplate(pathlists);
+}
+function checkCityAdded(valueArray,valueCheck) {
+	for (cityAdded=0; cityAdded < valueArray.length;cityAdded++){
+		
+		if (new String(valueArray[cityAdded]).valueOf() == new String(valueCheck).valueOf()) {
+			return 1;
+		}
+	}
+	
+	return -1;
+}
+function addDistinctFromCity(){
+	var total = 0;
+	//alert("getDistinctCity");
+	for (j in deals) {
+	  if (checkCityAdded(fromDistinctCity,deals[j].departure) == -1){
+			fromDistinctCity[total++] = deals[j].departure;
+		}	
+	}
+	//alert(fromDistinctCity);
+	
+	var fromCityList = document.getElementById("fromCity");
+	fromCityList.add(new Option("From", "-1"));
+	for (cityAdded=0; cityAdded < fromDistinctCity.length;cityAdded++){
+		//alert(toOption);
+		fromCityList.add(new Option(fromDistinctCity[cityAdded], fromDistinctCity[cityAdded]));
+		
+	}
+}
+function addDistinctToCity(){
+	var total = 0;
+	//alert("getDistinctCity");
+	for (j in deals) {
+	  if (checkCityAdded(toDistinctCity,deals[j].arrival) == -1){
+			toDistinctCity[total++] = deals[j].arrival;
+		}	
+	}
+	
+	//alert(toDistinctCity);
+	var toCityList = document.getElementById("toCity");
+	toCityList.add(new Option("To", "-1"));
+	for (cityAdded=0; cityAdded < toDistinctCity.length;cityAdded++){
+		//alert(toOption);
+		toCityList.add(new Option(toDistinctCity[cityAdded], toDistinctCity[cityAdded]));
+		
+	}
+	
+//	alert(toOption);
+//	document.getElementById("toCity").innerHTML =  toOption;
+}
+function findDirectPath(fromCity,toCity) {
+
+	//pathTemplate = '{"paths":[';
+	//alert(deals[0].departure == fromCity);
+	var pathTemplate = [];
+	var total = 0;
+	for (j in deals) {
+		if (deals[j].departure == fromCity && deals[j].arrival == toCity) {
+		  pathTemplate[total++] = deals[j]; 
+		}
+	}
+	
+	//alert(pathTemplate);
+	return pathTemplate; 
+}
+function displayTemplate(pathlists) {
+//alert(pathlists);
+/*
+	var pathTemplate = findDirectPath(formCity,toCity);
+	var displayTemplate = pathTemplate;
+	
+	if ( sort == 1) {
+		displayTemplate.sort(function(a, b){
+			return a.cost - b.cost
+		}
+		);
+	}else {
+		displayTemplate.sort(function(a, b){
+			return eval((a.duration.h + a.duration.m)) - eval((b.duration.h + b.duration.m))
+		}
+		);
+	}
+	*/
+	var displayTemplate = pathlists[0].split(",");
+	//alert(displayTemplate);
+	var index = displayTemplate.length;
+	var totalCost = 0;
+	var totalHour =0;
+	var totalMin =0;
+	var displayIndex= -1;
+	//alert(displayTemplate.paths[0].departure);
+	displayHTMLTemplate = '<table border=1 width=100% height=100%>';
+	displayHTMLTemplate = displayHTMLTemplate + "<tr><td>departure</td><td>arrival</td><td>cost</td><td>duration</td></tr>";
+	for (j in displayTemplate) {
+		displayIndex = displayTemplate[--index];
+		//alert(index);
+		displayHTMLTemplate = displayHTMLTemplate + "<tr>";
+		displayHTMLTemplate = displayHTMLTemplate + "<td>" + deals[displayIndex].departure + "</td>";
+		displayHTMLTemplate = displayHTMLTemplate + "<td>" + deals[displayIndex].arrival + "</td>";
+		displayHTMLTemplate = displayHTMLTemplate + "<td>" + deals[displayIndex].cost + "&euro;</td>";
+		displayHTMLTemplate = displayHTMLTemplate + "<td>" + deals[displayIndex].duration.h +"H"+ deals[displayIndex].duration.m + "</td>";
+		displayHTMLTemplate = displayHTMLTemplate + "</tr>";
+		totalCost = totalCost + deals[displayIndex].cost;
+		totalHour = totalHour + parseInt(deals[displayIndex].duration.h);
+		totalMin= totalMin + parseInt(deals[displayIndex].duration.m) ;
+	}
+	displayHTMLTemplate = displayHTMLTemplate + "<tr>";
+	displayHTMLTemplate = displayHTMLTemplate + "<td colspan=2>Total</td>";
+	displayHTMLTemplate = displayHTMLTemplate + "<td>" + totalCost + "&euro;</td>";
+	displayHTMLTemplate = displayHTMLTemplate + "<td>" + totalHour+ "H" + totalMin + "M</td>";
+	displayHTMLTemplate = displayHTMLTemplate + "</table>";
+	//alert(displayHTMLTemplate);
+	document.getElementById("tripPathResult").innerHTML =  displayHTMLTemplate;
+	
+}
+
+function checkRoute(fromCity,startFromCity) {
+	//alert("checkRoute :" + fromCity + " " + startFromCity);
+	var route = 0;
+	//new String(fromCity).valueOf()
+	for (route in deals) {
+				if (new String(deals[route].arrival).valueOf() == new String(fromCity).valueOf()) {
+				  if (deals[route].departure == startFromCity) {
+				  	//alert(deals[route].departure);
+				  	inderectPathIndex = inderectPathIndex + route + ",";
+				  	//alert(inderectPathIndex);
+				  	routeIndex = inderectPathIndex;
+				  	break;
+				  	
+				  }else {
+				    //alert(route + " " +deals[route].arrival + " " +deals[route].departure);
+				    inderectPathIndex = inderectPathIndex + route + ",";
+				   // alert(inderectPathIndex);
+				  	inderectPathIndex = checkRoute(deals[route].departure,startFromCity); 
+				  	
+				  }
+				}
+		}
+		
+}
+function findTripPaths(fromCity,toCity) {
+	var pathTemplate = [];
+	var total = 0;
+	var pathlists = [];
+	var routeIndexs;
+	
+	//alert(fromCity + " " + toCity);
+	/*
+	for (j in deals) {
+		if (deals[j].departure == fromCity && deals[j].arrival == toCity) {
+		  //pathTemplate[total++] = deals[j]; 
+		 //alert(j);
+		  pathlists[total++] = j + "";
+		}
+	}
+	*/
+	//alert(pathlists.length);
+	//new String(toCity).valueOf()
+		for (k in deals) {
+			//alert(deals[k].departure != fromCity || deals[k].arrival != toCity);
+			if (new String(deals[k].departure).valueOf() != new String(fromCity).valueOf() || new String(deals[k].arrival).valueOf() != new String(toCity).valueOf()) {
+				if (deals[k].arrival == toCity) {
+				 // pathTemplate[total++] = deals[j];
+				 //alert(k + " " +deals[k].arrival + " " +deals[k].departure);
+				 
+				 inderectPathIndex = k + ",";
+				  inderectPathIndex = checkRoute(deals[k].departure,fromCity);
+				//  alert("routeIndex :" + routeIndex);
+				  routeIndex = routeIndex.substring(0,routeIndex.length - 1);
+				 // alert("route" + routeIndex);
+				 routeIndexs = routeIndex.split(",");
+				//alert("routeIndex :" + deals[routeIndexs[routeIndexs.length -1]].departure);
+				 if (routeIndexs != null && deals[routeIndexs[routeIndexs.length -1]].departure == fromCity) {
+				  	pathlists[total++] = routeIndex;
+				 }
+				  routeIndex = "";
+				}
+			}else if (new String(deals[k].departure).valueOf() == new String(fromCity).valueOf() && new String(deals[k].arrival).valueOf() == new String(toCity).valueOf())  {
+				pathlists[total++] = k + "";
+			}
+		}
+		
+	//alert("pathlists" + pathlists);
+	return pathlists;
+	//alert("pathlists.length " + pathlists.length);
+	
+}	
+//document.getElementById("demo").innerHTML = obj.currency + ", " + fromCity + "<br/>" + toCity;
+//displayTemplate("London","Amsterdam",2);
+//displayTemplate(2);
+//findInDirectPath("London","Moscow");
+//getDistinctFromCity();
+addDistinctToCity();
+addDistinctFromCity();
+//document.getElementById("demo").innerHTML =  displayHTMLTemplate;
+
+</script>
+
+</body>
+</html>
